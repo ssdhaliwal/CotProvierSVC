@@ -1,30 +1,107 @@
 package net.mysmrti.cotprovider.services;
 
+import java.net.*;
 import java.text.*;
 import java.util.*;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Response;
+import javax.servlet.*;
+import javax.servlet.http.*;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 
 import org.apache.commons.lang3.*;
 import org.apache.commons.math3.random.*;
 
+import net.mysmrti.cotprovider.application.*;
+import net.mysmrti.cotprovider.resources.*;
+
 @Path("/cotdummy")
-public class CotDummyDataService {
+public class CotDummyDataService extends BaseConfigManager {
 
-	@GET
-	@Path("/{param}")
-	public Response getMsg(@PathParam("param") String msg) {
+	@Context
+	ServletContext context;
 
-		String output = generateCotData(Integer.valueOf(msg));
+	@Context
+	HttpServletRequest request;
 
-		return Response.status(200).entity(output).build();
-
+	HashMap<String, Object> _trackList = new HashMap<>(); 
+	
+	public CotDummyDataService() {
 	}
 
-	private String generateCotData(int length) {
+	@Override
+	protected void initializeService() throws Exception {
+		super.initializeService();
+	}
+
+	@GET
+	@Path("/status")
+	@Produces("text/plain")
+	public String getStatus() {
+		try {
+			this.initializeService();
+
+			String ip = getClientIp();
+			System.out.println("client ip/" + ip);
+		} catch (Exception e) {
+			System.out.println(e);
+			e.printStackTrace();
+		}
+
+		return "Cot Dummy Provider";
+	}
+
+	@GET
+	@Path("/{size}")
+	public Response getTracks(@PathParam("size") String size) {
+
+		try {
+			this.initializeService();
+			String output = generateCotData(Integer.valueOf(size), "-90,90,-180,180");
+			return Response.status(200).entity(output).build();
+		} catch (Exception ex) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage())
+					.build();
+		}
+	}
+
+	@GET
+	@Path("/{size}/{extent}")
+	public Response getTracks(@PathParam("size") String size, @PathParam("extent") String extent) {
+
+		try {
+			this.initializeService();
+			String output = generateCotData(Integer.valueOf(size), extent);
+			return Response.status(200).entity(output).build();
+		} catch (Exception ex) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage())
+					.build();
+		}
+	}
+
+	@GET
+	@Path("/randomize")
+	public Response getTracks() {
+
+		try {
+			this.initializeService();
+			String output = randomizeCotData();
+			return Response.status(200).entity(output).build();
+		} catch (Exception ex) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage())
+					.build();
+		}
+	}
+
+	private String generateCotData(int length, String extent) {
+		Double latmin, latmax, lonmin, lonmax;
+		String latlon[] = extent.split(",");
+
+		latmin = Double.valueOf(latlon[0]);
+		latmax = Double.valueOf(latlon[1]);
+		lonmin = Double.valueOf(latlon[2]);
+		lonmax = Double.valueOf(latlon[3]);
+		
 		String result = "{\"type\": \"FeatureCollection\",\"features\": [";
 		RandomGenerator rgKey = new Well1024a((new Date()).getTime());
 		RandomDataGenerator random = new RandomDataGenerator(rgKey);
@@ -37,19 +114,27 @@ public class CotDummyDataService {
 		int iOffset, nOffset = 0, nMultiplier = 10;
 		double iSpeed;
 
+		CotMinotaurType track = null;
+		
 		for (int i = 0; i < length; i++) {
 			id = UUID.randomUUID().toString();
 			name = String.format("%06d", random.nextInt(0, 999999));
 
-			lat = String.valueOf(random.nextInt(-90, 90) + rgKey.nextDouble());
-			lon = String.valueOf(random.nextInt(-180, 180) + rgKey.nextDouble());
+			lat = String.valueOf(latmin + (latmax - latmin) * rgKey.nextDouble());
+			lon = String.valueOf(lonmin + (lonmax - lonmin) * rgKey.nextDouble());
 
-			iOffset = random.nextInt(0, 2);
+			iOffset = random.nextInt(0, 5);
 			if (iOffset == 0) {
-				threat = "NEU";
+				threat = "AIR";
 			} else if (iOffset == 1) {
-				threat = "PND";
+				threat = "FRD";
 			} else if (iOffset == 2) {
+				threat = "LND";
+			} else if (iOffset == 3) {
+				threat = "NEU";
+			} else if (iOffset == 4) {
+				threat = "PND";
+			} else if (iOffset == 5) {
 				threat = "UNK";
 			}
 
@@ -103,21 +188,60 @@ public class CotDummyDataService {
 			}
 
 			currentTime = new Date();
-			result += ((i == 0) ? "" : ",") + "{" + "\"type\": \"Feature\"," + "\"id\": \"" + id + "\","
-					+ "\"geometry\": {" + "    \"type\": \"Point\"," + "    \"coordinates\": [" + "        " + lat + ","
-					+ "        " + lon + "" + "    ]" + "}," + "\"geometry_name\": \"position\"," + "\"properties\": {"
-					+ "    \"name\": \"" + name + "\"," + "    \"type\": \"" + type + "\"," + "    \"fid\": \"" + id
-					+ "\"," + "    \"class\": null," + "    \"category\": \"" + category + "\"," + "    \"alertLevel\": null,"
-					+ "    \"threat\": \"" + threat + "\"," + "    \"dimension\": \"LND\"," + "    \"flag\": null,"
-					+ "    \"speed\": " + speed + "," + "    \"dtg\": \"" + simpleformat.format(currentTime.getTime()) + "\","
-					+ "    \"altitude\": " + altitude + "," + "    \"course\": " + course + ","
-					+ "    \"classification\": \"UNCLASSIFIED\"" + "}" + "}";
+			track = new CotMinotaurType(id, Double.valueOf(lat), Double.valueOf(lon), name, type, category, 
+					threat, Double.valueOf(speed), simpleformat.format(currentTime.getTime()), 
+					Double.valueOf(altitude), Double.valueOf(course));
+			_trackList.put(id, track);
+			
+			result += ((i == 0) ? "" : ",") + track.toString();
+		}
+
+		try {
+			String ip = getClientIp();
+			setResource("size_" + ip, length);
+			setResource("extent_" + ip, extent);
+			setResource("tracks_" + ip, _trackList);
+		} catch (Exception ex) {
+			System.out.println(ex);
 		}
 
 		currentTime = new Date();
-		result += "],\"totalFeatures\": \"unknown\",\"numberReturned\": " + length + ",\"timeStamp\": \"" + 
+		result += "],\"totalFeatures\": \"unknown\",\"numberReturned\": " + _trackList.size() + ",\"timeStamp\": \"" + 
 				simpleformat.format(currentTime.getTime()) + "\","
 				+ "\"crs\": {\"type\": \"name\",\"properties\": {\"name\": \"urn:ogc:def:crs:EPSG::4326\"}}}";
+		return result;
+	}
+
+	private String getClientIp() throws Exception {
+		String ip = request.getRemoteAddr();
+		if (ip.equalsIgnoreCase("0:0:0:0:0:0:0:1")) {
+		    InetAddress inetAddress = InetAddress.getLocalHost();
+		    String ipAddress = inetAddress.getHostAddress();
+		    ip = ipAddress;
+		}
+		
+		return ip;
+	}
+	
+	private String randomizeCotData() {
+		String result = "";
+
+		try {
+			String ip = getClientIp();
+
+			int size = Integer.valueOf(getResource("size_" + ip, "0").toString());
+			String extent = getResource("extent_" + ip, "-90,90,-180,180").toString();
+			HashMap<String, Object> tracks = (HashMap<String, Object>)getResource("tracks_" + ip, null);
+			
+			int pctAdd = (int)Math.round(size * .01); 
+			int pctUpdate = (int)Math.round(size * .05); 
+			int pctRemove = (int)Math.round(size * .02);
+			
+			System.out.println(pctAdd + ", " + pctUpdate + ", " + pctRemove);
+		} catch (Exception ex) {
+			System.out.println(ex);
+		}
+		
 		return result;
 	}
 

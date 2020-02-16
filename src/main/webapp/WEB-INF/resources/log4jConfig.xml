@@ -19,7 +19,7 @@
         <Root level="error">
             <AppenderRef ref="Console" />
         </Root>
-		<logger name="net.mysmrt.cotprovider" level="info" additivity="false">
+		<logger name="net.mysmrti.cotprovider" level="info" additivity="false">
             <AppenderRef ref="Console" />
 	  		<AppenderRef ref="RollingFile"/>
 	  	</logger>
