@@ -303,7 +303,7 @@ public class CotDummyDataService extends BaseConfigManager {
 			// add new and remove old tracks
 			ArrayList<Integer> rows = new ArrayList<>();
 			for (int i = 0; i < pctAdd; i++) {
-				rows.add(random.nextInt(0, size-1));	
+				rows.add(random.nextInt(0, size-1));
 				track = (CotMinotaurType)tracks.get(rows.get(rows.size()-1));
 				removeList.add(track.get_id());
 			}
@@ -328,7 +328,7 @@ public class CotDummyDataService extends BaseConfigManager {
 			for (int i = 0; i < pctUpdate; i++) {
 				rows.add(random.nextInt(0, size-1));
 
-				track = (CotMinotaurType)tracks.get(i);
+				track = (CotMinotaurType)tracks.get(rows.get(rows.size()-1));
 				track = updateTrack(track, random, rgKey, simpleformat, latmin, latmax, lonmin, lonmax);
 				trackUpdates.add(track);
 			}
