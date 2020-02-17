@@ -3,6 +3,7 @@ package net.mysmrti.cotprovider.services;
 import java.net.*;
 import java.text.*;
 import java.util.*;
+import java.util.concurrent.*;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -55,8 +56,13 @@ public class CotDummyDataService extends BaseConfigManager {
 	public Response getTracks(@PathParam("size") String size) {
 
 		try {
+			long startTime = System.nanoTime();
+			
 			this.initializeService();
 			String output = generateCotData(Integer.valueOf(size), "-90,90,-180,180");
+			
+			long endTime = System.nanoTime();
+			showExecutionTime("getTracks/{" + size + "}", startTime, endTime);
 			return Response.status(200).entity(output).build();
 		} catch (Exception ex) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage())
@@ -69,8 +75,13 @@ public class CotDummyDataService extends BaseConfigManager {
 	public Response getTracks(@PathParam("size") String size, @PathParam("extent") String extent) {
 
 		try {
+			long startTime = System.nanoTime();
+			
 			this.initializeService();
 			String output = generateCotData(Integer.valueOf(size), extent);
+			
+			long endTime = System.nanoTime();
+			showExecutionTime("getTracks/{" + size + "}/{" + extent + "}", startTime, endTime);
 			return Response.status(200).entity(output).build();
 		} catch (Exception ex) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage())
@@ -83,8 +94,13 @@ public class CotDummyDataService extends BaseConfigManager {
 	public Response getTracks() {
 
 		try {
+			long startTime = System.nanoTime();
+			
 			this.initializeService();
 			String output = randomizeCotData(0, 0);
+			
+			long endTime = System.nanoTime();
+			showExecutionTime("getTracks/randomize", startTime, endTime);
 			return Response.status(200).entity(output).build();
 		} catch (Exception ex) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage())
@@ -97,8 +113,13 @@ public class CotDummyDataService extends BaseConfigManager {
 	public Response getTracks(@PathParam("add") int add, @PathParam("update") int update) {
 
 		try {
+			long startTime = System.nanoTime();
+			
 			this.initializeService();
 			String output = randomizeCotData(add, update);
+			
+			long endTime = System.nanoTime();
+			showExecutionTime("getTracks/randomize/{" + add + "}/{" + update + "}", startTime, endTime);
 			return Response.status(200).entity(output).build();
 		} catch (Exception ex) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage())
@@ -115,7 +136,9 @@ public class CotDummyDataService extends BaseConfigManager {
 		lonmin = Double.valueOf(latlon[2]);
 		lonmax = Double.valueOf(latlon[3]);
 		
-		String result = "{\"type\": \"FeatureCollection\",\"features\": [";
+		StringBuilder result = new StringBuilder();
+		result.append("{\"type\": \"FeatureCollection\",\"features\": [");
+		
 		RandomGenerator rgKey = new Well1024a((new Date()).getTime());
 		RandomDataGenerator random = new RandomDataGenerator(rgKey);
 
@@ -130,7 +153,7 @@ public class CotDummyDataService extends BaseConfigManager {
 			track = getRandomTrack(random, rgKey, simpleformat, latmin, latmax, lonmin, lonmax);
 			tracks.add(track);
 			
-			result += ((i == 0) ? "" : ",") + track.toString();
+			result.append(((i == 0) ? "" : ",") + track.toString());
 		}
 
 		try {
@@ -143,10 +166,10 @@ public class CotDummyDataService extends BaseConfigManager {
 		}
 
 		currentTime = new Date();
-		result += "],\"totalFeatures\": \"unknown\",\"numberReturned\": " + tracks.size() + ",\"timeStamp\": \"" + 
+		result.append("],\"totalFeatures\": \"unknown\",\"numberReturned\": " + tracks.size() + ",\"timeStamp\": \"" + 
 				simpleformat.format(currentTime.getTime()) + "\","
-				+ "\"crs\": {\"type\": \"name\",\"properties\": {\"name\": \"urn:ogc:def:crs:EPSG::4326\"}}}";
-		return result;
+				+ "\"crs\": {\"type\": \"name\",\"properties\": {\"name\": \"urn:ogc:def:crs:EPSG::4326\"}}}");
+		return result.toString();
 	}
 	
 	private CotMinotaurType getRandomTrack(RandomDataGenerator random, RandomGenerator rgKey, SimpleDateFormat simpleformat,
@@ -238,7 +261,8 @@ public class CotDummyDataService extends BaseConfigManager {
 	}
 
 	private String randomizeCotData(int add, int update) {
-		String result = "{\"type\": \"FeatureCollection\",\"features\": [";;
+		StringBuilder result = new StringBuilder();
+		result.append("{\"type\": \"FeatureCollection\",\"features\": [");
 
 		Double latmin, latmax, lonmin, lonmax;
 		
@@ -294,7 +318,7 @@ public class CotDummyDataService extends BaseConfigManager {
 						tracks.add(track);
 						trackUpdates.add(track);
 					} else {
-						System.out.println("id mismatch...");
+						System.out.println("id mismatch..., " + track.get_id());
 					}
 				}
 			}
@@ -311,18 +335,18 @@ public class CotDummyDataService extends BaseConfigManager {
 
 			for (int i = 0; i < trackUpdates.size(); i++) {
 				track = (CotMinotaurType)trackUpdates.get(i);
-				result += ((i == 0) ? "" : ",") + track.toString();
+				result.append(((i == 0) ? "" : ",") + track.toString());
 			}
-			result += "],\"removed\": [";
+			result.append("],\"removed\": [");
 
 			for (int i = 0; i < removeList.size(); i++) {
-				result += ((i == 0) ? "" : ",") + "\"" + removeList.get(i) + "\"";
+				result.append(((i == 0) ? "" : ",") + "\"" + removeList.get(i) + "\"");
 			}
 			
 			currentTime = new Date();
-			result += "], \"totalFeatures\": \"unknown\",\"numberReturned\": " + trackUpdates.size() + ",\"timeStamp\": \"" + 
+			result.append("], \"totalFeatures\": \"unknown\",\"numberReturned\": " + trackUpdates.size() + ",\"timeStamp\": \"" + 
 					simpleformat.format(currentTime.getTime()) + "\","
-					+ "\"crs\": {\"type\": \"name\",\"properties\": {\"name\": \"urn:ogc:def:crs:EPSG::4326\"}}}";
+					+ "\"crs\": {\"type\": \"name\",\"properties\": {\"name\": \"urn:ogc:def:crs:EPSG::4326\"}}}");
 
 			setResource("size_" + ip, tracks.size());
 			setResource("tracks_" + ip, tracks);
@@ -330,7 +354,7 @@ public class CotDummyDataService extends BaseConfigManager {
 			System.out.println(ex);
 		}
 		
-		return result;
+		return result.toString();
 	}
 	
 	private CotMinotaurType updateTrack(CotMinotaurType track, RandomDataGenerator random, RandomGenerator rgKey, SimpleDateFormat simpleformat,
@@ -389,6 +413,12 @@ public class CotDummyDataService extends BaseConfigManager {
 		return track;
 	}
 
+	private void showExecutionTime(String name, long start, long end) {
+		long duration = (end - start);
+		
+		System.out.println("exectime (" + name + ") / secs (" + TimeUnit.NANOSECONDS.toSeconds(duration) + ")");
+	}
+	
 	private String getClientIp() throws Exception {
 		String ip = request.getRemoteAddr();
 		if (ip.equalsIgnoreCase("0:0:0:0:0:0:0:1")) {
