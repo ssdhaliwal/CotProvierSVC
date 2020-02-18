@@ -146,12 +146,12 @@ public class CotDummyDataService extends BaseConfigManager {
 		SimpleDateFormat simpleformat = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:s.SSS'Z'");
 		simpleformat.setTimeZone(TimeZone.getTimeZone("GMT"));
 		
-		ArrayList<Object> tracks = new ArrayList<Object>();
+		HashMap<String, Object> tracks = new HashMap<String, Object>();
 		CotMinotaurType track = null;
 		
 		for (int i = 0; i < length; i++) {
 			track = getRandomTrack(random, rgKey, simpleformat, latmin, latmax, lonmin, lonmax);
-			tracks.add(track);
+			tracks.put(track.get_id(), track);
 			
 			result.append(((i == 0) ? "" : ",") + track.toString());
 		}
@@ -265,7 +265,7 @@ public class CotDummyDataService extends BaseConfigManager {
 		result.append("{\"type\": \"FeatureCollection\",\"features\": [");
 
 		Double latmin, latmax, lonmin, lonmax;
-		
+
 		RandomGenerator rgKey = new Well1024a((new Date()).getTime());
 		RandomDataGenerator random = new RandomDataGenerator(rgKey);
 
@@ -285,8 +285,8 @@ public class CotDummyDataService extends BaseConfigManager {
 			lonmin = Double.valueOf(latlon[2]);
 			lonmax = Double.valueOf(latlon[3]);
 
-			ArrayList<Object> tracks = (ArrayList<Object>)getResource("tracks_" + ip, null);
-			ArrayList<Object> trackUpdates = new ArrayList<Object>();
+			HashMap<String, Object> tracks = (HashMap<String, Object>)getResource("tracks_" + ip, null);
+			HashMap<String, Object> trackUpdates = new HashMap<String, Object>();
 			
 			int pctAdd = add;
 			int pctUpdate = update;
@@ -296,49 +296,50 @@ public class CotDummyDataService extends BaseConfigManager {
 			}
 
 			CotMinotaurType track = null;
-
-			ArrayList<Object> addList = new ArrayList<>();
+			String[] trackKeys = (String[])tracks.keySet().toArray(new String[0]);
 			ArrayList<String> removeList = new ArrayList<>();
 
 			// add new and remove old tracks
 			ArrayList<Integer> rows = new ArrayList<>();
 			for (int i = 0; i < pctAdd; i++) {
 				rows.add(random.nextInt(0, size-1));
-				track = (CotMinotaurType)tracks.get(rows.get(rows.size()-1));
+				track = (CotMinotaurType)tracks.get(trackKeys[rows.get(rows.size()-1)]);
+				
 				removeList.add(track.get_id());
 			}
-			for(int i = tracks.size()-1; i >=0; i--) {
-				if (rows.indexOf(i) >= 0) {
-					track = (CotMinotaurType)tracks.get(i);
-					
-					if (removeList.indexOf(track.get_id()) >= 0) {
-						tracks.remove(i);
+			for(String key : removeList) {
+				tracks.remove(key);
 
-						track = getRandomTrack(random, rgKey, simpleformat, latmin, latmax, lonmin, lonmax);
-						tracks.add(track);
-						trackUpdates.add(track);
-					} else {
-						System.out.println("id mismatch..., " + track.get_id());
-					}
-				}
+				track = getRandomTrack(random, rgKey, simpleformat, latmin, latmax, lonmin, lonmax);
+				tracks.put(track.get_id(), track);
+				trackUpdates.put(track.get_id(), track);
+
+				System.out.println("track-remove, " + key);
+				System.out.println("track-add   , " + track.get_id());
 			}
 
 			// update tracks
+			trackKeys = (String[])tracks.keySet().toArray(new String[0]);
 			rows.clear();
 			for (int i = 0; i < pctUpdate; i++) {
 				rows.add(random.nextInt(0, size-1));
 
-				track = (CotMinotaurType)tracks.get(rows.get(rows.size()-1));
+				track = (CotMinotaurType)tracks.get(trackKeys[rows.get(rows.size()-1)]);
 				track = updateTrack(track, random, rgKey, simpleformat, latmin, latmax, lonmin, lonmax);
-				trackUpdates.add(track);
+				trackUpdates.put(track.get_id(), track);
+
+				System.out.println("track-update, " + track.get_id());
 			}
 
-			for (int i = 0; i < trackUpdates.size(); i++) {
-				track = (CotMinotaurType)trackUpdates.get(i);
-				result.append(((i == 0) ? "" : ",") + track.toString());
+			int t = 0;
+			for (String key : trackUpdates.keySet()) {
+				track = (CotMinotaurType)trackUpdates.get(key);
+				result.append(((t == 0) ? "" : ",") + track.toString());
+				
+				t++;
 			}
+
 			result.append("],\"removed\": [");
-
 			for (int i = 0; i < removeList.size(); i++) {
 				result.append(((i == 0) ? "" : ",") + "\"" + removeList.get(i) + "\"");
 			}
