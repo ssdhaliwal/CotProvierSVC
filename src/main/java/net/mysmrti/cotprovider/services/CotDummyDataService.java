@@ -151,9 +151,10 @@ public class CotDummyDataService extends BaseConfigManager {
 		
 		for (int i = 0; i < length; i++) {
 			track = getRandomTrack(random, rgKey, simpleformat, latmin, latmax, lonmin, lonmax);
-			tracks.put(track.get_id(), track);
-			
-			result.append(((i == 0) ? "" : ",") + track.toString());
+			if (!tracks.containsKey(track.get_id())) {
+				tracks.put(track.get_id(), track);
+				result.append(((i == 0) ? "" : ",") + track.toString());
+			}
 		}
 
 		try {
@@ -161,6 +162,8 @@ public class CotDummyDataService extends BaseConfigManager {
 			setResource("size_" + ip, length);
 			setResource("extent_" + ip, extent);
 			setResource("tracks_" + ip, tracks);
+			
+			System.out.println("initial, ip/" + ip + ", new/" + tracks.size());
 		} catch (Exception ex) {
 			System.out.println(ex);
 		}
@@ -276,7 +279,6 @@ public class CotDummyDataService extends BaseConfigManager {
 		try {
 			String ip = getClientIp();
 
-			int size = Integer.valueOf(getResource("size_" + ip, "0").toString());
 			String extent = getResource("extent_" + ip, "-90,90,-180,180").toString();
 			String latlon[] = extent.split(",");
 
@@ -290,52 +292,64 @@ public class CotDummyDataService extends BaseConfigManager {
 			
 			int pctAdd = add;
 			int pctUpdate = update;
-			if ((add == 0) && (update == 0)) {
-				pctAdd = (int)Math.round(size * .01); 
-				pctUpdate = (int)Math.round(size * .05);
-			}
+			
+			int totalRemove = 0, totalAdd = 0, totalUpdate = 0;
 
 			CotMinotaurType track = null;
-			String[] trackKeys = (String[])tracks.keySet().toArray(new String[0]);
 			ArrayList<String> removeList = new ArrayList<>();
 
-			// add new and remove old tracks
-			ArrayList<Integer> rows = new ArrayList<>();
-			for (int i = 0; i < pctAdd; i++) {
-				rows.add(random.nextInt(0, size-1));
-				track = (CotMinotaurType)tracks.get(trackKeys[rows.get(rows.size()-1)]);
-				
-				removeList.add(track.get_id());
+			ArrayList<String> trackKeys = new ArrayList<>(Arrays.asList(tracks.keySet().toArray(new String[0])));
+			int size = trackKeys.size();
+			if (add == 0) {
+				pctAdd = (int)Math.round(size * .01); 
 			}
-			for(String key : removeList) {
-				tracks.remove(key);
-
+			if (update == 0) {
+				pctUpdate = (int)Math.round(size * .05);
+			}
+			
+			// remove old tracks and add same amount of new tracks
+			for (int r = 0, i = 0; i < pctAdd; i++) {
+				r = random.nextInt(0, size-1);
+				if (!removeList.contains(trackKeys.get(r))) {
+					removeList.add(trackKeys.get(r));
+				}
+				
 				track = getRandomTrack(random, rgKey, simpleformat, latmin, latmax, lonmin, lonmax);
-				tracks.put(track.get_id(), track);
 				trackUpdates.put(track.get_id(), track);
-
-				System.out.println("track-remove, " + key);
-				System.out.println("track-add   , " + track.get_id());
+					
+				totalAdd++;
 			}
 
 			// update tracks
-			trackKeys = (String[])tracks.keySet().toArray(new String[0]);
-			rows.clear();
-			for (int i = 0; i < pctUpdate; i++) {
-				rows.add(random.nextInt(0, size-1));
+			for (int r = 0, i = 0; i < pctUpdate; i++) {
+				r = random.nextInt(0, size-1);
 
-				track = (CotMinotaurType)tracks.get(trackKeys[rows.get(rows.size()-1)]);
-				track = updateTrack(track, random, rgKey, simpleformat, latmin, latmax, lonmin, lonmax);
-				trackUpdates.put(track.get_id(), track);
+				track = (CotMinotaurType)tracks.get(trackKeys.get(r));
+				if (!removeList.contains(track.get_id())) {
+					track = updateTrack(track, random, rgKey, simpleformat, latmin, latmax, lonmin, lonmax);
+					trackUpdates.put(track.get_id(), track);
 
-				System.out.println("track-update, " + track.get_id());
+					totalUpdate++;
+				}
+			}
+
+			// cleanup tracks and update list
+			for(String key : removeList) {
+				tracks.remove(key);
+				totalRemove++;
+
+				if (trackUpdates.containsKey(key)) {
+					trackUpdates.remove(key);
+					totalUpdate--;
+				}
 			}
 
 			int t = 0;
 			for (String key : trackUpdates.keySet()) {
 				track = (CotMinotaurType)trackUpdates.get(key);
-				result.append(((t == 0) ? "" : ",") + track.toString());
+				tracks.put(track.get_id(), track);
 				
+				result.append(((t == 0) ? "" : ",") + track.toString());
 				t++;
 			}
 
@@ -351,6 +365,8 @@ public class CotDummyDataService extends BaseConfigManager {
 
 			setResource("size_" + ip, tracks.size());
 			setResource("tracks_" + ip, tracks);
+			
+			System.out.println("updates, ip/" + ip + ", rem/" + totalRemove + ", add/" + totalAdd + ", upd/" + totalUpdate);
 		} catch (Exception ex) {
 			System.out.println(ex);
 		}
