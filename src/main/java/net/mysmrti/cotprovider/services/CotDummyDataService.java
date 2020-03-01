@@ -24,7 +24,7 @@ public class CotDummyDataService extends BaseConfigManager {
 
 	@Context
 	HttpServletRequest request;
-	
+
 	public CotDummyDataService() {
 	}
 
@@ -57,16 +57,15 @@ public class CotDummyDataService extends BaseConfigManager {
 
 		try {
 			long startTime = System.nanoTime();
-			
+
 			this.initializeService();
 			String output = generateCotData(Integer.valueOf(size), "-90,90,-180,180");
-			
+
 			long endTime = System.nanoTime();
 			showExecutionTime("getTracks/{" + size + "}", startTime, endTime);
 			return Response.status(200).entity(output).build();
 		} catch (Exception ex) {
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage())
-					.build();
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage()).build();
 		}
 	}
 
@@ -76,16 +75,15 @@ public class CotDummyDataService extends BaseConfigManager {
 
 		try {
 			long startTime = System.nanoTime();
-			
+
 			this.initializeService();
 			String output = generateCotData(Integer.valueOf(size), extent);
-			
+
 			long endTime = System.nanoTime();
 			showExecutionTime("getTracks/{" + size + "}/{" + extent + "}", startTime, endTime);
 			return Response.status(200).entity(output).build();
 		} catch (Exception ex) {
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage())
-					.build();
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage()).build();
 		}
 	}
 
@@ -95,16 +93,15 @@ public class CotDummyDataService extends BaseConfigManager {
 
 		try {
 			long startTime = System.nanoTime();
-			
+
 			this.initializeService();
 			String output = randomizeCotData(0, 0);
-			
+
 			long endTime = System.nanoTime();
 			showExecutionTime("getTracks/randomize", startTime, endTime);
 			return Response.status(200).entity(output).build();
 		} catch (Exception ex) {
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage())
-					.build();
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage()).build();
 		}
 	}
 
@@ -114,16 +111,15 @@ public class CotDummyDataService extends BaseConfigManager {
 
 		try {
 			long startTime = System.nanoTime();
-			
+
 			this.initializeService();
 			String output = randomizeCotData(add, update);
-			
+
 			long endTime = System.nanoTime();
 			showExecutionTime("getTracks/randomize/{" + add + "}/{" + update + "}", startTime, endTime);
 			return Response.status(200).entity(output).build();
 		} catch (Exception ex) {
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage())
-					.build();
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(ex.getMessage()).build();
 		}
 	}
 
@@ -135,20 +131,20 @@ public class CotDummyDataService extends BaseConfigManager {
 		latmax = Double.valueOf(latlon[1]);
 		lonmin = Double.valueOf(latlon[2]);
 		lonmax = Double.valueOf(latlon[3]);
-		
+
 		StringBuilder result = new StringBuilder();
 		result.append("{\"type\": \"FeatureCollection\",\"features\": [");
-		
+
 		RandomGenerator rgKey = new Well1024a((new Date()).getTime());
 		RandomDataGenerator random = new RandomDataGenerator(rgKey);
 
 		Date currentTime;
 		SimpleDateFormat simpleformat = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:s.SSS'Z'");
 		simpleformat.setTimeZone(TimeZone.getTimeZone("GMT"));
-		
+
 		HashMap<String, Object> tracks = new HashMap<String, Object>();
 		CotMinotaurType track = null;
-		
+
 		for (int i = 0; i < length; i++) {
 			track = getRandomTrack(random, rgKey, simpleformat, latmin, latmax, lonmin, lonmax);
 			if (!tracks.containsKey(track.get_id())) {
@@ -162,21 +158,21 @@ public class CotDummyDataService extends BaseConfigManager {
 			setResource("size_" + ip, length);
 			setResource("extent_" + ip, extent);
 			setResource("tracks_" + ip, tracks);
-			
+
 			System.out.println("initial, ip/" + ip + ", new/" + tracks.size());
 		} catch (Exception ex) {
 			System.out.println(ex);
 		}
 
 		currentTime = new Date();
-		result.append("],\"totalFeatures\": \"unknown\",\"numberReturned\": " + tracks.size() + ",\"timeStamp\": \"" + 
-				simpleformat.format(currentTime.getTime()) + "\","
+		result.append("],\"totalFeatures\": \"unknown\",\"numberReturned\": " + tracks.size() + ",\"timeStamp\": \""
+				+ simpleformat.format(currentTime.getTime()) + "\","
 				+ "\"crs\": {\"type\": \"name\",\"properties\": {\"name\": \"urn:ogc:def:crs:EPSG::4326\"}}}");
 		return result.toString();
 	}
-	
-	private CotMinotaurType getRandomTrack(RandomDataGenerator random, RandomGenerator rgKey, SimpleDateFormat simpleformat,
-			Double latmin, Double latmax, Double lonmin, Double lonmax) {
+
+	private CotMinotaurType getRandomTrack(RandomDataGenerator random, RandomGenerator rgKey,
+			SimpleDateFormat simpleformat, Double latmin, Double latmax, Double lonmin, Double lonmax) {
 		CotMinotaurType track = null;
 
 		Date currentTime;
@@ -184,7 +180,7 @@ public class CotDummyDataService extends BaseConfigManager {
 		String id, name, lat, lon, speed, type, category, altitude, course, threat = "UNK";
 		int iOffset, nOffset = 0, nMultiplier = 10;
 		double iSpeed;
-		
+
 		id = UUID.randomUUID().toString();
 		name = String.format("%06d", random.nextInt(0, 999999));
 
@@ -256,9 +252,9 @@ public class CotDummyDataService extends BaseConfigManager {
 		}
 
 		currentTime = new Date();
-		track = new CotMinotaurType(id, Double.valueOf(lat), Double.valueOf(lon), name, type, category, 
-				threat, Double.valueOf(speed), simpleformat.format(currentTime.getTime()), 
-				Double.valueOf(altitude), Double.valueOf(course));
+		track = new CotMinotaurType(id, Double.valueOf(lat), Double.valueOf(lon), name, type, category, threat,
+				Double.valueOf(speed), simpleformat.format(currentTime.getTime()), Double.valueOf(altitude),
+				Double.valueOf(course));
 
 		return track;
 	}
@@ -287,44 +283,49 @@ public class CotDummyDataService extends BaseConfigManager {
 			lonmin = Double.valueOf(latlon[2]);
 			lonmax = Double.valueOf(latlon[3]);
 
-			HashMap<String, Object> tracks = (HashMap<String, Object>)getResource("tracks_" + ip, null);
+			HashMap<String, Object> tracks = (HashMap<String, Object>) getResource("tracks_" + ip, null);
 			HashMap<String, Object> trackUpdates = new HashMap<String, Object>();
-			
+
 			int pctAdd = add;
 			int pctUpdate = update;
-			
+
 			int totalRemove = 0, totalAdd = 0, totalUpdate = 0;
 
 			CotMinotaurType track = null;
 			ArrayList<String> removeList = new ArrayList<>();
+			ArrayList<String> addList = new ArrayList<>();
 
 			ArrayList<String> trackKeys = new ArrayList<>(Arrays.asList(tracks.keySet().toArray(new String[0])));
 			int size = trackKeys.size();
 			if (add == 0) {
-				pctAdd = (int)Math.round(size * .01); 
+				pctAdd = (int) Math.round(size * .01);
 			}
 			if (update == 0) {
-				pctUpdate = (int)Math.round(size * .05);
+				pctUpdate = (int) Math.round(size * .05);
 			}
-			
+
 			// remove old tracks and add same amount of new tracks
 			for (int r = 0, i = 0; i < pctAdd; i++) {
-				r = random.nextInt(0, size-1);
+				r = random.nextInt(0, size - 1);
 				if (!removeList.contains(trackKeys.get(r))) {
 					removeList.add(trackKeys.get(r));
 				}
-				
+
 				track = getRandomTrack(random, rgKey, simpleformat, latmin, latmax, lonmin, lonmax);
-				trackUpdates.put(track.get_id(), track);
-					
-				totalAdd++;
+				if (!removeList.contains(track.get_id()) && !trackKeys.contains(track.get_id())
+						&& !addList.contains(track.get_id())) {
+					trackUpdates.put(track.get_id(), track);
+
+					addList.add(track.get_id());
+					totalAdd++;
+				}
 			}
 
 			// update tracks
 			for (int r = 0, i = 0; i < pctUpdate; i++) {
-				r = random.nextInt(0, size-1);
+				r = random.nextInt(0, size - 1);
 
-				track = (CotMinotaurType)tracks.get(trackKeys.get(r));
+				track = (CotMinotaurType) tracks.get(trackKeys.get(r));
 				if (!removeList.contains(track.get_id())) {
 					track = updateTrack(track, random, rgKey, simpleformat, latmin, latmax, lonmin, lonmax);
 					trackUpdates.put(track.get_id(), track);
@@ -334,7 +335,7 @@ public class CotDummyDataService extends BaseConfigManager {
 			}
 
 			// cleanup tracks and update list
-			for(String key : removeList) {
+			for (String key : removeList) {
 				tracks.remove(key);
 				totalRemove++;
 
@@ -346,9 +347,9 @@ public class CotDummyDataService extends BaseConfigManager {
 
 			int t = 0;
 			for (String key : trackUpdates.keySet()) {
-				track = (CotMinotaurType)trackUpdates.get(key);
+				track = (CotMinotaurType) trackUpdates.get(key);
 				tracks.put(track.get_id(), track);
-				
+
 				result.append(((t == 0) ? "" : ",") + track.toString());
 				t++;
 			}
@@ -357,30 +358,31 @@ public class CotDummyDataService extends BaseConfigManager {
 			for (int i = 0; i < removeList.size(); i++) {
 				result.append(((i == 0) ? "" : ",") + "\"" + removeList.get(i) + "\"");
 			}
-			
+
 			currentTime = new Date();
-			result.append("], \"totalFeatures\": \"unknown\",\"numberReturned\": " + trackUpdates.size() + ",\"timeStamp\": \"" + 
-					simpleformat.format(currentTime.getTime()) + "\","
+			result.append("], \"totalFeatures\": \"unknown\",\"numberReturned\": " + trackUpdates.size()
+					+ ",\"timeStamp\": \"" + simpleformat.format(currentTime.getTime()) + "\","
 					+ "\"crs\": {\"type\": \"name\",\"properties\": {\"name\": \"urn:ogc:def:crs:EPSG::4326\"}}}");
 
 			setResource("size_" + ip, tracks.size());
 			setResource("tracks_" + ip, tracks);
-			
-			System.out.println("updates, ip/" + ip + ", rem/" + totalRemove + ", add/" + totalAdd + ", upd/" + totalUpdate);
+
+			System.out.println(
+					"updates, ip/" + ip + ", rem/" + totalRemove + ", add/" + totalAdd + ", upd/" + totalUpdate);
 		} catch (Exception ex) {
 			System.out.println(ex);
 		}
-		
+
 		return result.toString();
 	}
-	
-	private CotMinotaurType updateTrack(CotMinotaurType track, RandomDataGenerator random, RandomGenerator rgKey, SimpleDateFormat simpleformat,
-			Double latmin, Double latmax, Double lonmin, Double lonmax) {
+
+	private CotMinotaurType updateTrack(CotMinotaurType track, RandomDataGenerator random, RandomGenerator rgKey,
+			SimpleDateFormat simpleformat, Double latmin, Double latmax, Double lonmin, Double lonmax) {
 		Date currentTime;
 
 		String speed, altitude, threat = "UNK";
 		int iOffset, nOffset = 0, nMultiplier = 10;
-		
+
 		track.movePoint();
 
 		iOffset = random.nextInt(0, 5);
@@ -398,7 +400,7 @@ public class CotDummyDataService extends BaseConfigManager {
 			threat = "UNK";
 		}
 		track.set_threat(threat);
-		
+
 		iOffset = random.nextInt(0, 3);
 		if (iOffset == 0) {
 			nOffset = 50;
@@ -432,29 +434,29 @@ public class CotDummyDataService extends BaseConfigManager {
 
 	private void showExecutionTime(String name, long start, long end) {
 		long duration = (end - start);
-		
+
 		System.out.println("exectime (" + name + ") / secs (" + TimeUnit.NANOSECONDS.toSeconds(duration) + ")");
 	}
-	
+
 	private String getClientIp() throws Exception {
 		String ip = request.getRemoteAddr();
 		if (ip.equalsIgnoreCase("0:0:0:0:0:0:0:1")) {
-		    InetAddress inetAddress = InetAddress.getLocalHost();
-		    String ipAddress = inetAddress.getHostAddress();
-		    ip = ipAddress;
+			InetAddress inetAddress = InetAddress.getLocalHost();
+			String ipAddress = inetAddress.getHostAddress();
+			ip = ipAddress;
 		}
-		
+
 		return ip;
 	}
 
 	public void showBaseUrl() {
-	    String scheme = request.getScheme() + "://";
-	    String serverName = request.getServerName();
-	    String serverPort = (request.getServerPort() == 80) ? "" : ":" + request.getServerPort();
-	    String contextPath = request.getContextPath();
-	    
-	    String realPath = servlet.getRealPath(".");
-	    
-	    System.out.println(scheme + "," + serverName + "," + serverPort + "," + contextPath + "," + realPath);
-	  }
+		String scheme = request.getScheme() + "://";
+		String serverName = request.getServerName();
+		String serverPort = (request.getServerPort() == 80) ? "" : ":" + request.getServerPort();
+		String contextPath = request.getContextPath();
+
+		String realPath = servlet.getRealPath(".");
+
+		System.out.println(scheme + "," + serverName + "," + serverPort + "," + contextPath + "," + realPath);
+	}
 }
